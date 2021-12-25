@@ -427,6 +427,10 @@ export class GlobalVarsService {
     const isSameUserAsBefore =
       this.loggedInUser && user && this.loggedInUser.PublicKeyBase58Check === user.PublicKeyBase58Check;
 
+    if (isSameUserAsBefore) {
+      user.ReferralInfoResponses = this.loggedInUser.ReferralInfoResponses;
+    }
+
     this.loggedInUser = user;
 
     if (this.loggedInUser) {
@@ -467,7 +471,6 @@ export class GlobalVarsService {
     }
 
     this._notifyLoggedInUserObservers(user, isSameUserAsBefore);
-    this.navigateToCurrentStepInTutorial(user);
   }
 
   preventBackButton() {
@@ -507,15 +510,15 @@ export class GlobalVarsService {
       let route = [];
       switch (user.TutorialStatus) {
         case TutorialStatus.STARTED: {
-          route = [RouteNames.TUTORIAL, RouteNames.INVEST, RouteNames.BUY_CREATOR];
+          route = [RouteNames.TUTORIAL, RouteNames.INVEST, RouteNames.BUY_DESO];
           break;
         }
         case TutorialStatus.CREATE_PROFILE: {
-          route = [RouteNames.TUTORIAL, RouteNames.INVEST, RouteNames.BUY_CREATOR];
+          route = [RouteNames.TUTORIAL, RouteNames.INVEST, RouteNames.BUY_DESO];
           break;
         }
         case TutorialStatus.FOLLOW_CREATORS: {
-          route = [RouteNames.TUTORIAL, RouteNames.INVEST, RouteNames.BUY_CREATOR];
+          route = [RouteNames.TUTORIAL, RouteNames.INVEST, RouteNames.BUY_DESO];
           break;
         }
         case TutorialStatus.INVEST_OTHERS_BUY: {
@@ -854,6 +857,10 @@ export class GlobalVarsService {
   }
 
   _alertError(err: any, showBuyDeSo: boolean = false, showBuyCreatorCoin: boolean = false) {
+    if (err === "Your balance is insufficient.") {
+      showBuyDeSo = true;
+    }
+
     SwalHelper.fire({
       target: this.getTargetComponentSelector(),
       icon: "error",
@@ -1458,11 +1465,16 @@ export class GlobalVarsService {
         .GetReferralInfoForReferralHash(environment.verificationEndpointHostname, referralHash)
         .subscribe((res) => {
           const referralInfo = res.ReferralInfoResponse.Info;
-          if (
+          const countrySignUpBonus = res.CountrySignUpBonus;
+          if (!countrySignUpBonus.AllowCustomReferralAmount) {
+            this.referralUSDCents = countrySignUpBonus.ReferralAmountOverrideUSDCents;
+          } else if (
             res.ReferralInfoResponse.IsActive &&
             (referralInfo.TotalReferrals < referralInfo.MaxReferrals || referralInfo.MaxReferrals == 0)
           ) {
             this.referralUSDCents = referralInfo.RefereeAmountUSDCents;
+          } else {
+            this.referralUSDCents = countrySignUpBonus.ReferralAmountOverrideUSDCents;
           }
         });
     }
