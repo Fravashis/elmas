@@ -4,6 +4,7 @@
 
 export const environment = {
   production: false,
+  nodeApi: "api.love4src.com,
   uploadImageHostname: "node.deso.org",
   verificationEndpointHostname: "https://node.deso.org",
   uploadVideoHostname: "node.deso.org",
